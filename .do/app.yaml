@@ -1,0 +1,6 @@
+name: tracker
+services:
+- name: web
+  github:
+    repo: damaru-inc/tracker
+    branch: main
