@@ -58,21 +58,20 @@ def save_data():
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
 
-        print("posting")
-        print(type(data))
-        print(data['page'])
-
         try:
             with conn.cursor() as cur:
-                cur.execute("insert into tracker(page, page_id, ip) values (%s, %s, %s)",
-                               (data['page'], data['page_id'], data['ip']))
+                page_name = data['page_name']
+                page_id = data['page_id']
+                request_ip = data['request_ip']
+                logger.info(f"Saving {request_ip} {page_id} {page_name}")
+                cur.execute("insert into tracker(page_name, page_id, request_ip) values (%s, %s, %s)",
+                               (page_name, page_id, request_ip))
                 # result = cur.fetchone()
                 conn.commit()
+
                 
                 return jsonify({
                     "message": "Data saved successfully"
-#                    "id": result['id'],
- #                   "created_at": result['created_at'].isoformat()
                 }), 201
                 
         except Exception as e:
@@ -96,7 +95,13 @@ def get_data():
 
     try:
         with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute("SELECT id, created_at, page, page_id, ip FROM tracker ORDER BY created_at DESC LIMIT 10;")
+            cur.execute("""
+                        SELECT id, created_at,
+                        page_name, page_id, request_ip 
+                        FROM tracker 
+                        ORDER BY created_at DESC 
+                        LIMIT 1000;
+                        """)
             results = cur.fetchall()
             
             # Convert to JSON-serializable format
@@ -105,9 +110,9 @@ def get_data():
                 data.append({
                     "id": row['id'],
                     "created_at": row['created_at'].isoformat(),
-                    "page": row['page'],
+                    "page_name": row['page_name'],
                     "page_id": row['page_id'],
-                    "ip": row['ip']
+                    "request_ip": row['request_ip']
                 })
             
             return data, 200
